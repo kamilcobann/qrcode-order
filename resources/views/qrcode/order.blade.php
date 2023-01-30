@@ -27,6 +27,7 @@
       @endforeach
     </ul>
     <div class="card-body">
+        <button type="submit"></button>
       <a href="#" class="card-link">Card link</a>
       <a href="#" class="card-link">Another link</a>
     </div>
