@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 use App\Models\Cart;
 use App\Models\Product;
+use App\Models\Order;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use QrCode;
@@ -12,7 +13,7 @@ class QRCodeController extends Controller
 {
 
     public function __construct() {
-        $this->middleware('auth:api');
+        //$this->middleware('auth:api');
     }
 
     public function cartQR() //get
@@ -40,8 +41,8 @@ class QRCodeController extends Controller
 
         if($request->hasFile('cart_qrcode'))
         {
-            $im_name = $user->name.ucfirst($user->surname).'Scanned'.$request->cart_qrcode->getClientOriginalExtension();
-            //$im_name = "kamil".ucfirst("coban").'Scanned.'.$request->cart_qrcode->getClientOriginalExtension();
+            //$im_name = $user->name.ucfirst($user->surname).'Scanned'.$request->cart_qrcode->getClientOriginalExtension();
+            $im_name = "kamil".ucfirst("coban").'Scanned.'.$request->cart_qrcode->getClientOriginalExtension();
             $request->cart_qrcode->move(public_path('uploaded'),$im_name);
             $qrcode = new QrReader('uploaded/'.$im_name);
         }
@@ -50,12 +51,23 @@ class QRCodeController extends Controller
         $total_price = 0.0;
         $qrdata = json_decode($qrcode->text());
 
-        foreach ($qrdata['cart'] as $c) {
+        //return dd($qrdata->cart);
+
+        foreach ($qrdata->cart as $c) {
             $prod = Product::where('id','=',$c->product_id)->first();
             $total_price += ($prod->price * $c->amount);
         }
 
-        return view('qrcode.order',compact('qrdata','total_price'));
+        $order = Order::create([
+            'carts' => json_encode($qrdata->cart),
+            'user_id' => 1, //$user->id,
+            'address' => "usak",//$user->address,
+            'total_price' => $total_price,
+        ]);
+
+        $order_id = $order->id;
+
+        return view('qrcode.order',compact('qrdata','total_price','order_id'));
     }
 
     public function page() //get
@@ -64,8 +76,4 @@ class QRCodeController extends Controller
     }
 
 
-    public function orderQR()
-    {
-        
-    }
 }
