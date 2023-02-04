@@ -10,7 +10,7 @@
   </head>
   <body>
     <div class="card" style="width: 18rem;">
-  <img src="/generated/qrcodeKamilÇoban.png" class="card-img-top" alt="...">
+  <img src="/generated/qrcode{!!$user->name.ucfirst($user->surname)!!}.png" class="card-img-top" alt="...">
     <div class="card-body">
       <h5 class="card-title">Cart Details</h5>
     </div>

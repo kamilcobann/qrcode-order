@@ -67,7 +67,18 @@ class AuthController extends Controller
             'address' => $request->address,
         ]);
 
+
+        // Assigning roles
+
+        if($user->id == 1){
+            $user->assignRole('Seller');
+        }else{
+            $user->assignRole('Customer');
+        }
+
         $token = Auth::login($user);
+
+
 
         return response()->json([
             'status' => true,

@@ -4,20 +4,25 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Cart;
+use App\Models\User;
 use App\Models\Product;
 
 use Illuminate\Support\Facades\Auth;
 class CartController extends Controller
 {
-    public function __construct() {
-        $this->middleware('auth:api');
-    }
+     public function __construct() {
+    //     $this->middleware('auth:api');
+     }
+
+
 
     public function getCart()
     {
-        $user_id = Auth::id();
+        $user= Auth::user();
 
-        if($cart = Cart::where('user_id','=',$user_id)->get())
+        if($user->can('view-cart'))
+        {
+            if($cart = Cart::where('user_id','=',$user->id)->get())
         {
             return response()->json([
                 'status' => true,
@@ -28,20 +33,26 @@ class CartController extends Controller
                 'status' => false,
                 'message' => 'Cart Not Found',
             ]);
+        }}else{
+            return response()->json([
+                'status' => false,
+                'message' => 'You do not have permission',
+            ]);
         }
     }
 
 
     public function addToCart(Request $request)
     {
-        $user_id = Auth::id();
-
-        $request->validate([
+        $user = Auth::user();
+        
+        if($user->can('create-cart'))
+        {$request->validate([
             'product_id' => 'required|integer',
             'amount' => 'required|integer'
         ]);
 
-        if($cart = Cart::where('user_id','=',$user_id)->where('product_id','=',$request->product_id)->first())
+        if($cart = Cart::where('user_id','=',$user->id)->where('product_id','=',$request->product_id)->first())
         {
             
             $cart->product_id = $request->product_id;
@@ -60,8 +71,9 @@ class CartController extends Controller
             if($product->amount >= $request->amount){
                 
                 $cart = Cart::create([
-                    'user_id' => $user_id,
+                    'user_id' => $user->id,
                     'product_id' => $request->product_id,
+                    'boughtPrice' => $product->price,
                     'amount' => $request->amount,
                 ]);
 
@@ -86,22 +98,28 @@ class CartController extends Controller
                 'message' => 'product not found',
             ]);
 
+        }}else{
+            return response()->json([
+                'status' => false,
+                'message' => 'You do not have permission',
+            ]);
         }
     }
 
     public function removeFromCart(Request $request)
     {
-        $request->validate([
+        $user = Auth::user();
+        if($user->can('delete-cart'))
+        {$request->validate([
             'product_id' => 'integer|required',
             'amount' => 'integer|nullable',
         ]);
 
-        $user_id = Auth::id();
-
-        if($cart = Cart::where('user_id','=',$user_id)->where('product_id','=',$request->product_id)->get()){
+        
+        if($cart = Cart::where('user_id','=',$user->id)->where('product_id','=',$request->product_id)->get()){
             if($request->amount == null && $request->amount == $cart->amount){
                 
-                Cart::where('user_id','=',$user_id)->where('product_id','=',$request->product_id)->delete();
+                Cart::where('user_id','=',$user->id)->where('product_id','=',$request->product_id)->delete();
 
                 return response()->json([
                     'status' => true,
@@ -125,19 +143,30 @@ class CartController extends Controller
                     'cart' => $cart,
                 ]);
             }
+        }}else{
+            return response()->json([
+                'status'=>false,
+                'message'=> 'You do not have permission'
+            ]);
         }
     }
 
     public function deleteCart()
     {
-        $user_id = Auth::id();
-
-        $carts = Cart::where('user_id','=',$user_id)->delete();
+        $user = Auth::user();
+        if($user->can('delete-cart'))
+        {$carts = Cart::where('user_id','=',$user->id)->delete();
 
         return response()->json([
             'status' => true,
             'message' => 'All carts deleted',
             'carts' => $carts,
-        ]);
+        ]);}else{
+
+            return response()->json([
+                'status'=>false,
+                'message'=> 'You do not have permission'
+            ]);
+        }
     }
 }

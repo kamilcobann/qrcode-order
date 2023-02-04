@@ -19,33 +19,39 @@ class QRCodeController extends Controller
     public function cartQR() //get
     {
         $user = Auth::user();
-
-        $cart = Cart::where('user_id','=',$user->id)->get();
+        if($user->can('create-qr'))
+        {$cart = Cart::where('user_id','=',$user->id)->get();
 
         $data = array('user'=>$user->id,'cart'=>$cart);
         $qrcode = QrCode::size(250)->format('png')->backgroundColor(255,255,255)
-        ->generate(json_encode($data),public_path('/generated'.'/qrcode1'.$user->name.ucfirst($user->surname).'.png'));
+        ->generate(json_encode($data),public_path('/generated'.'/qrcode'.$user->name.ucfirst($user->surname).'.png'));
         
         
-        return view('qrcode.cart',compact('qrcode','data'));
+        return view('qrcode.cart',compact('qrcode','data','user'));}else{
+            return response()->json([
+                'status' => false,
+                'message' => 'You do not have permission'
+            ]);
+        }
     }
 
     public function readQR(Request $request) //post
     {
 
         $user = Auth::user();
-
-        $request->validate([
-            'cart_qrcode' => 'required'
-        ]);
-
-        if($request->hasFile('cart_qrcode'))
+        if($user->can('read-qr'))
         {
-            //$im_name = $user->name.ucfirst($user->surname).'Scanned'.$request->cart_qrcode->getClientOriginalExtension();
-            $im_name = "kamil".ucfirst("coban").'Scanned.'.$request->cart_qrcode->getClientOriginalExtension();
+            $request->validate([
+            'cart_qrcode' => 'required'
+            ]);
+
+            if($request->hasFile('cart_qrcode'))
+            {
+            $im_name = $user->name.ucfirst($user->surname).'Scanned'.$request->cart_qrcode->getClientOriginalExtension();
+            //$im_name = "kamil".ucfirst("coban").'Scanned.'.$request->cart_qrcode->getClientOriginalExtension();
             $request->cart_qrcode->move(public_path('uploaded'),$im_name);
             $qrcode = new QrReader('uploaded/'.$im_name);
-        }
+            }
 
         
         $total_price = 0.0;
@@ -67,12 +73,26 @@ class QRCodeController extends Controller
 
         $order_id = $order->id;
 
-        return view('qrcode.order',compact('qrdata','total_price','order_id'));
+        return view('qrcode.order',compact('qrdata','total_price','order_id'));}
+        else{
+            return response()->json([
+                'status' => false,
+                'message' => 'You do not have permission'
+            ]);
+        }
     }
 
     public function page() //get
     {
-        return view('qrcode.read');
+        $user = Auth::user();
+        if($user->can('read-qr')){
+            return view('qrcode.read');
+        }else{
+            return response()->json([
+                'status' => false,
+                'message' => 'You do not have permission'
+            ]);
+        }
     }
 
 
