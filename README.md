@@ -6,7 +6,7 @@ All the routes/endpoints started with the prefix /api since these routes created
 
 After import this repository :
 
-composer install
+composer update
 
 change env.example to env
 
